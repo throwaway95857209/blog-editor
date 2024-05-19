@@ -1,0 +1,11 @@
+#editor {
+  height: 80vh;
+  text-align: left;
+}
+#preview {
+  border-radius: 6px;
+  height: 80vh;
+  border: 1px solid #dedede;
+  text-align: left;
+  padding: 20px;
+}
