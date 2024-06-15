@@ -43,6 +43,9 @@
       <div class="row">
         <div class="col">
           <label for="editor" class="form-label">Editor</label>
+          <input id="title" class="form-control mb-2" type="text" placeholder="Title" aria-label="Title">
+          <textarea id="subtitle" class="form-control mb-2" placeholder="Subtitle"></textarea>
+          <input id="author" class="form-control mb-2" type="text" placeholder="Author" aria-label="Author">
           <div id="editor"></div>
         </div>
         <div class="col">
@@ -53,6 +56,17 @@
       </div>
     </div>
   </div>
+  <template id="template">
+    <h1 id="blog-title">Title</h1>
+    <h2 id="blog-subtitle">Subtitle</h2>
+    <div id="content">
+      <div id="blog-post" data-title="${title}" data-subtitle="${subtitle}">${content}</div>
+    </div>
+    <script>
+      document.getElementById("blog-title").replaceChildren(document.getElementById("blog-post").getAttribute("data-title"));
+      document.getElementById("blog-subtitle").replaceChildren(document.getElementById("blog-post").getAttribute("data-subtitle"));
+    </script>
+  </template>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
     integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
     crossorigin="anonymous"></script>
@@ -69,15 +83,39 @@
       theme: 'vs-dark'
     });
 
-    editor.onDidChangeModelContent(function (ev) {
-      document.getElementById("preview").innerHTML = editor.getValue();
+    const updatePreview = function() {
+      const title = document.getElementById("title").value;
+      const subtitle = document.getElementById("subtitle").value;
+      const content = editor.getValue();
+      let template = document.getElementById("template").innerHTML;
+      template = template.replace("${title}", title);
+      template = template.replace("${subtitle}", subtitle);
+      template = template.replace("${content}", content);
+
+      const child = document.createRange().createContextualFragment(template);
+      document.getElementById("preview").replaceChildren(child);
+    }
+
+    document.getElementById("title").addEventListener("input", function(ev) {
+      updatePreview();
+    });
+  
+    document.getElementById("subtitle").addEventListener("input", function(ev) {
+      updatePreview();
     });
 
+    editor.onDidChangeModelContent(function (ev) {
+      updatePreview();
+    });
+    
     document.getElementById("publish").addEventListener("click", function (ev) {
+      const title = document.getElementById("title").value;
+      const subtitle = document.getElementById("subtitle").value;
+      const author = document.getElementById("author").value;
       const html = document.getElementById("preview").innerHTML;
       const source = editor.getValue();
 
-      const data = { html: html, source: source };
+      const data = { title: title, subtitle: subtitle, author: author, html: html, source: source };
       postJSON(data);
     });
 

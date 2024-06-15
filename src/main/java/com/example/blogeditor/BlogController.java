@@ -35,7 +35,7 @@ public class BlogController {
 
     GHRepository repository = github.getRepository("throwaway95857209/blog");
 
-    String name = getName();
+    String name = getName(blogPost.getTitle());
     String message = getMessage(name);
 
     Map<String, Object> post = createOrUpdatePost(blogPost, repository, name, message);
@@ -46,14 +46,11 @@ public class BlogController {
   }
 
   private String getMessage(String name) {
-    String message = "Add blog post ${name}".replace("${name}", name);
-    return message;
+    return "Add blog post ${name}".replace("${name}", name);
   }
 
-  private String getName() {
-    String name = "post-${name}".replace("${name}",
-        new SimpleDateFormat("yyyyMMdd-HHmmss-SSS").format(new Date()));
-    return name;
+  private String getName(String title) {
+    return title.replaceAll("[^a-zA-Z0-9]", "-").toLowerCase();
   }
 
   private Map<String, Object> createOrUpdatePost(BlogPost blogPost, GHRepository repository, String name, String message)
@@ -65,8 +62,12 @@ public class BlogController {
 
     Map<String, Object> post = new LinkedHashMap<>();
     post.put("name", name);
+    post.put("title", blogPost.getTitle());
+    post.put("subtitle", blogPost.getSubtitle());
+    post.put("author", blogPost.getAuthor());
     post.put("html", htmlPath.substring(5));
     post.put("source", sourcePath.substring(5));
+    post.put("created", new Date());
     return post;
   }
 

@@ -1,5 +1,6 @@
 #editor {
-  height: 80vh;
+  border: 1px solid #dedede;
+  height: 57vh;
   text-align: left;
 }
 #preview {
