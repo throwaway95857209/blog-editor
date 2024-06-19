@@ -9,4 +9,5 @@
   border: 1px solid #dedede;
   text-align: left;
   padding: 20px;
+  overflow: auto;
 }

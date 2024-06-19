@@ -2,7 +2,6 @@ package com.example.blogeditor;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -53,21 +52,38 @@ public class BlogController {
     return title.replaceAll("[^a-zA-Z0-9]", "-").toLowerCase();
   }
 
+  private String template = """
+    <div id="blog-post" data-name="${name}" data-title="${title}" data-subtitle="${subtitle}" data-created="${created}" data-author="${author}">
+      ${content}
+    </div>
+      """;
+
   private Map<String, Object> createOrUpdatePost(BlogPost blogPost, GHRepository repository, String name, String message)
       throws IOException {
-    String htmlPath = "docs/" + name + ".html";
-    String sourcePath = "docs/source/" + name + ".html-source";
-    repository.createContent().path(htmlPath).content(blogPost.getHtml()).message(message).commit();
-    repository.createContent().path(sourcePath).content(blogPost.getSource()).message(message).commit();
-
     Map<String, Object> post = new LinkedHashMap<>();
     post.put("name", name);
     post.put("title", blogPost.getTitle());
     post.put("subtitle", blogPost.getSubtitle());
     post.put("author", blogPost.getAuthor());
+    post.put("created", new Date().getTime());
+
+    String content = blogPost.getHtml();
+    String html = template
+        .replace("${name}", (CharSequence) post.get("name"))
+        .replace("${title}", (CharSequence) post.get("title"))
+        .replace("${subtitle}", (CharSequence) post.get("subtitle"))
+        .replace("${author}", (CharSequence) post.get("author"))
+        .replace("${created}", "" + post.get("created"))
+        .replace("${content}", content);
+
+    String htmlPath = "docs/" + name + ".html";
+    String sourcePath = "docs/source/" + name + ".html-source";
+    repository.createContent().path(htmlPath).content(html).message(message).commit();
+    repository.createContent().path(sourcePath).content(blogPost.getSource()).message(message).commit();
+
     post.put("html", htmlPath.substring(5));
     post.put("source", sourcePath.substring(5));
-    post.put("created", new Date());
+
     return post;
   }
 
