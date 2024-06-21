@@ -9,12 +9,18 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import org.kohsuke.github.GHContent;
+import org.kohsuke.github.GHContentUpdateResponse;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.exc.StreamReadException;
@@ -121,5 +127,34 @@ public class BlogController {
     postMap.put((String) post.get("name"), post);
     dataContent.update(new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(dataMap), message,
         "main");
+  }
+
+  @PostMapping("uploadImage")
+  public ResponseEntity<String> handleImageUpload(@RequestPart("image") MultipartFile imageFile, @RequestPart("path") String path) {
+    if (!imageFile.isEmpty()) {
+      try {
+        uploadImageToRepository(imageFile, path);
+        return ResponseEntity.status(HttpStatus.OK).body("Image uploaded successfully to GitHub!");
+      } catch (IOException e) {
+        e.printStackTrace();
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body("Failed to upload image: " + e.getMessage());
+      }
+    } else {
+      return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Image file is empty");
+    }
+  }
+
+  public void uploadImageToRepository(MultipartFile imageFile, String path) throws IOException {
+    String token = System.getenv("GITHUB_ACCESS_TOKEN");
+    GitHub github = GitHub.connectUsingOAuth(token);
+
+    // Get repository
+    GHRepository repository = github.getRepository("throwaway95857209/blog");
+
+    // Upload image file
+    String filename = path + "/" + imageFile.getOriginalFilename();
+    byte[] bytes = imageFile.getBytes();
+    GHContentUpdateResponse commit = repository.createContent().path(filename).content(bytes).message("Upload ${filename}.".replace("${filename}", filename)).commit();
   }
 }

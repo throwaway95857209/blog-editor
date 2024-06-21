@@ -13,7 +13,7 @@
 </head>
 
 <body>
-  <nav class="navbar navbar-expand-lg bg-body-tertiary">
+  <nav class="navbar navbar-expand-lg bg-body-tertiary mb-3">
     <div class="container-fluid">
       <a class="navbar-brand" href="#">My Blog</a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
@@ -42,14 +42,18 @@
   <div class="container-fluid text-center">
     <div class="row">
       <div class="col">
-        <label for="editor" class="form-label">Editor</label>
         <input id="title" class="form-control mb-2" type="text" placeholder="Title" aria-label="Title">
         <textarea id="subtitle" class="form-control mb-2" placeholder="Subtitle"></textarea>
         <input id="author" class="form-control mb-2" type="text" placeholder="Author" aria-label="Author">
         <div id="editor"></div>
+        <div class="mb-2">
+          <form id="uploadForm" action="/uploadImage" method="post" enctype="multipart/form-data">
+            <input id="imageInput" type="file" name="image" accept="image/*" required>
+            <button id="uploadButton" type="submit">Upload Image</button>
+          </form>
+        </div>
       </div>
       <div class="col">
-        <label for="preview" class="form-label">Preview</label>
         <div id="preview">
           <h1 class="title"></h1>
           <h2 class="subtitle"></h2>
@@ -59,7 +63,8 @@
     </div>
   </div>
   <template id="template">
-    <div id="blog-post" data-name="${name}" data-title="${title}" data-subtitle="${subtitle}" data-created="${created}" data-author="${author}">${content}</div>
+    <div id="blog-post" data-name="${name}" data-title="${title}" data-subtitle="${subtitle}" data-created="${created}"
+      data-author="${author}">${content}</div>
   </template>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
     integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
@@ -79,7 +84,7 @@
     });
     editor.updateOptions({ wordWrap: "on", tabSize: 2 });
 
-    const updatePreview = function() {
+    const updatePreview = function () {
       const title = document.getElementById("title").value;
       const subtitle = document.getElementById("subtitle").value;
       const author = document.getElementById("author");
@@ -98,24 +103,24 @@
       document.querySelector("#preview .content").replaceChildren(child);
     }
 
-    document.getElementById("title").addEventListener("input", function(ev) {
+    document.getElementById("title").addEventListener("input", function (ev) {
       updatePreview();
     });
-  
-    document.getElementById("subtitle").addEventListener("input", function(ev) {
+
+    document.getElementById("subtitle").addEventListener("input", function (ev) {
       updatePreview();
     });
 
     editor.onDidChangeModelContent(function (ev) {
       updatePreview();
     });
-    
+
     document.getElementById("new").addEventListener("click", function (ev) {
       const title = document.getElementById("title").value = "";
       const subtitle = document.getElementById("subtitle").value = "";
       const author = document.getElementById("author").value = "";
 
-      editor.getModel(). setValue("");
+      editor.getModel().setValue("");
     });
 
     document.getElementById("publish").addEventListener("click", function (ev) {
@@ -154,6 +159,42 @@
       }
     }
   </script>
+
+  <script>
+    document.getElementById('uploadButton').addEventListener('click', uploadImage);
+
+    function uploadImage(ev) {
+      ev.preventDefault();
+
+      const fileInput = document.getElementById('imageInput');
+      const file = fileInput.files[0];
+
+      if (file) {
+        const formData = new FormData();
+        formData.append('image', file);
+        formData.append('path', 'docs/assets/img');
+
+        fetch('blog/uploadImage', {
+          method: 'POST',
+          body: formData
+        })
+          .then(response => {
+            if (response.ok) {
+              alert('Image uploaded successfully to GitHub!');
+            } else {
+              throw new Error('Failed to upload image');
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to upload image');
+          });
+      } else {
+        alert('Please select an image file');
+      }
+    }
+  </script>
+
 </body>
 
 </html>
