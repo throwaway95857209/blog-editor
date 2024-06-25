@@ -89,7 +89,8 @@
       const subtitle = document.getElementById("subtitle").value;
       const author = document.getElementById("author");
       const created = new Date().getTime();
-      const content = editor.getValue();
+      let content = editor.getValue();
+      content = content.replace("${image-path}", "https://throwaway95857209.github.io/blog/assets/img");
       let template = document.getElementById("template").innerHTML;
       template = template.replace("${title}", title);
       template = template.replace("${subtitle}", subtitle);
@@ -166,13 +167,15 @@
     function uploadImage(ev) {
       ev.preventDefault();
 
+      const imagePath = "docs/assets/img";
       const fileInput = document.getElementById('imageInput');
       const file = fileInput.files[0];
 
       if (file) {
+        
         const formData = new FormData();
         formData.append('image', file);
-        formData.append('path', 'docs/assets/img');
+        formData.append('path', imagePath);
 
         fetch('blog/uploadImage', {
           method: 'POST',
@@ -180,7 +183,14 @@
         })
           .then(response => {
             if (response.ok) {
-              alert('Image uploaded successfully to GitHub!');
+              const text = `<img src="${imagePath}/${file.name}" width="200">`;
+
+              alert(`Image uploaded successfully!\nPasted this in editor:\n${text}`);
+
+              const selection = editor.getSelection();
+              const id = { major: 1, minor: 1 };
+              const op = {identifier: id, range: selection, text: text, forceMoveMarkers: true};
+              editor.executeEdits("insert-text", [op]);
             } else {
               throw new Error('Failed to upload image');
             }
