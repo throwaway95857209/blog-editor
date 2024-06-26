@@ -17,11 +17,12 @@ class SimpleImage {
         image: /https?:\/\/\S+\.(gif|jpe?g|tiff|png)$/i
       }
     }
+
   }
 
   /**
- * Automatic sanitize config
- */
+   * Automatic sanitize config
+   */
   static get sanitize() {
     return {
       url: false, // disallow HTML
@@ -29,8 +30,9 @@ class SimpleImage {
     }
   }
 
-  constructor({ data, api }) {
+  constructor({ data, api, config }) {
     this.api = api;
+    this.config = config || {};
     this.data = {
       url: data.url || '',
       caption: data.caption || '',
@@ -67,7 +69,7 @@ class SimpleImage {
 
     const input = document.createElement('input');
 
-    input.placeholder = 'Paste an image URL...';
+    input.placeholder = this.api.i18n.t(this.config.placeholder || 'Paste an image URL...');
     input.addEventListener('paste', (event) => {
       this._createImage(event.clipboardData.getData('text'));
     });
