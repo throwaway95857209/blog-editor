@@ -10,9 +10,10 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs"></script>
   <script src="https://cdn.jsdelivr.net/npm/@editorjs/paragraph"></script>
+  <script src="https://cdn.jsdelivr.net/npm/simple-image-editorjs"></script>
   <!-- <script src="https://cdn.jsdelivr.net/npm/@editorjs/simple-image"></script> -->
-  <script src="simple-image.js"></script>
-  <link href="simple-image.css" rel="stylesheet" />
+  <!-- <script src="simple-image.js"></script>
+  <link href="simple-image.css" rel="stylesheet" /> -->
   <script src="https://cdn.jsdelivr.net/npm/@editorjs/checklist"></script>
   <script src="https://cdn.jsdelivr.net/npm/@editorjs/code"></script>
   <script src="https://cdn.jsdelivr.net/npm/@editorjs/delimiter"></script>
@@ -64,10 +65,16 @@
       border-bottom: none;
     }
 
+    .cdx-simple-image__picture--stretched img,
     .simple-image.stretched img {
       display: unset;
       margin: unset;
       margin-bottom: 10px;
+      width: 60%;
+    }
+
+    .cdx-input.cdx-simple-image__caption {
+      display: none;
     }
   </style>
 </head>
