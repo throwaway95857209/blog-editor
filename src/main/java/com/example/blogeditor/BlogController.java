@@ -10,6 +10,7 @@ import java.util.logging.Logger;
 
 import org.kohsuke.github.GHContent;
 import org.kohsuke.github.GHContentUpdateResponse;
+import org.kohsuke.github.GHFileNotFoundException;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
 import org.springframework.http.HttpStatus;
@@ -57,7 +58,8 @@ public class BlogController {
     return title.replaceAll("[^a-zA-Z0-9]", "-").toLowerCase();
   }
 
-  private Map<String, Object> createOrUpdatePost(BlogPost blogPost, GHRepository repository, String name, String message)
+  private Map<String, Object> createOrUpdatePost(BlogPost blogPost, GHRepository repository, String name,
+      String message)
       throws IOException {
     Map<String, Object> post = new LinkedHashMap<>();
     post.put("name", name);
@@ -66,13 +68,18 @@ public class BlogController {
     post.put("author", blogPost.getAuthor());
     post.put("created", new Date().getTime());
     post.put("content", blogPost.getContent());
-    
+    post.put("properties", blogPost.getProperties());
+
     String path = "docs/content/" + name + ".json";
     post.put("path", path.substring(5));
-
     String value = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(post);
-    repository.createContent().path(path).content(value).message(message).commit();
 
+    try {
+      GHContent fileContent = repository.getFileContent(path);
+      fileContent.update(value, message, "main");
+    } catch (GHFileNotFoundException e) {
+      repository.createContent().path(path).content(value).message(message).commit();
+    }
     return post;
   }
 
@@ -92,7 +99,11 @@ public class BlogController {
     Map<String, Object> dataMap = new LinkedHashMap<>();
     Map<String, Object> postMap = new LinkedHashMap<>();
     dataMap.put("posts", postMap);
-    postMap.put((String) post.get("name"), post);
+
+    Map<String, Object> summary = new LinkedHashMap<>();
+    summary.putAll(post);
+    summary.remove("content");
+    postMap.put((String) post.get("name"), summary);
 
     repository.createContent().path("docs/data/data.json")
         .content(new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(dataMap))
@@ -107,13 +118,19 @@ public class BlogController {
         });
     @SuppressWarnings("unchecked")
     Map<String, Object> postMap = (Map<String, Object>) dataMap.get("posts");
-    postMap.put((String) post.get("name"), post);
+
+    Map<String, Object> summary = new LinkedHashMap<>();
+    summary.putAll(post);
+    summary.remove("content");
+    postMap.put((String) post.get("name"), summary);
+
     dataContent.update(new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(dataMap), message,
         "main");
   }
 
   @PostMapping("uploadImage")
-  public ResponseEntity<String> handleImageUpload(@RequestPart("image") MultipartFile imageFile, @RequestPart("path") String path) {
+  public ResponseEntity<String> handleImageUpload(@RequestPart("image") MultipartFile imageFile,
+      @RequestPart("path") String path) {
     if (!imageFile.isEmpty()) {
       try {
         uploadImageToRepository(imageFile, path);
@@ -138,6 +155,7 @@ public class BlogController {
     // Upload image file
     String filename = path + "/" + imageFile.getOriginalFilename();
     byte[] bytes = imageFile.getBytes();
-    GHContentUpdateResponse commit = repository.createContent().path(filename).content(bytes).message("Upload ${filename}.".replace("${filename}", filename)).commit();
+    GHContentUpdateResponse commit = repository.createContent().path(filename).content(bytes)
+        .message("Upload ${filename}.".replace("${filename}", filename)).commit();
   }
 }

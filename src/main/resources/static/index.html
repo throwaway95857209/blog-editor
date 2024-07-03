@@ -13,7 +13,7 @@
   <!-- <script src="https://cdn.jsdelivr.net/npm/simple-image-editorjs"></script> -->
   <!-- <script src="https://cdn.jsdelivr.net/npm/@editorjs/simple-image"></script> -->
   <script src="simple-image.js"></script>
-    <link href="simple-image.css" rel="stylesheet" />
+  <link href="simple-image.css" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@editorjs/checklist"></script>
   <script src="https://cdn.jsdelivr.net/npm/@editorjs/code"></script>
   <script src="https://cdn.jsdelivr.net/npm/@editorjs/delimiter"></script>
@@ -77,14 +77,16 @@
       display: none;
     }
 
-    #title, #subtitle, #author {
+    #title,
+    #subtitle,
+    #author {
       outline: none;
     }
   </style>
 </head>
 
 <body>
-  <nav class="navbar navbar-expand-lg navbar-light mb-3">
+  <nav class="navbar navbar-expand-sm navbar-light mb-3">
     <div class="container px-4 px-lg-5">
       <a class="navbar-brand" href="#">My Blog Editor</a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
@@ -99,7 +101,12 @@
             </a>
             <ul class="dropdown-menu">
               <li><a id="new" class="dropdown-item" href="#">New</a></li>
+              <li><a id="draft" class="dropdown-item" href="#">Save as Draft</a></li>
               <li><a id="publish" class="dropdown-item" href="#">Publish</a></li>
+              <li>
+                <hr class="dropdown-divider">
+              </li>
+              <li><a id="properties" class="dropdown-item" href="#">Properties</a></li>
             </ul>
           </li>
         </ul>
@@ -112,11 +119,11 @@
       <div class="row gx-4 gx-lg-5 justify-content-center">
         <div class="col-md-10 col-lg-8 col-xl-7">
           <div class="post-heading">
-            <h1 id="title" contenteditable>Title</h1>
-            <h2 id="subtitle" class="subheading" contenteditable>Subtitle</h2>
+            <h1 id="title" class="paste" contenteditable>Title</h1>
+            <h2 id="subtitle" class="subheading paste" contenteditable>Subtitle</h2>
             <span class="meta">
               Posted by
-              <a id="author" href="#!" contenteditable>Author</a> on <span id="created">Date</span>
+              <a id="author" href="#!" class="paste" contenteditable>Author</a> on <span id="created">Date</span>
             </span>
           </div>
         </div>
@@ -132,6 +139,25 @@
       </div>
     </div>
   </article>
+
+  <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="staticBackdropLabel">Properties Editor</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <label for="properties-editor" class="form-label">Enter additional properties as JSON:</label>
+          <textarea id="properties-editor" class="form-control" placeholder='{ "property1": "value1" }'></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script>
     const editor = new EditorJS({
@@ -209,14 +235,21 @@
     crossorigin="anonymous"></script>
 
   <script>
+    const myModal = new bootstrap.Modal(document.getElementById("staticBackdrop"), {});
+    document.getElementById("properties").addEventListener("click", function (ev) {
+      myModal.show();
+    });
+
     document.getElementById("publish").addEventListener("click", function (ev) {
       editor.save().then(savedData => {
         const title = document.getElementById("title").innerText;
         const subtitle = document.getElementById("subtitle").innerText;
         const author = document.getElementById("author").innerText;
         const content = savedData;
+        let properties = document.getElementById("properties-editor").value || "{}";
+        properties = JSON.parse(properties);
 
-        const data = { title: title, subtitle: subtitle, author: author, content: content };
+        const data = { title: title, subtitle: subtitle, author: author, content: content, properties: properties };
         postJSON(data);
       });
     });
@@ -244,6 +277,29 @@
       } catch (error) {
         console.error("Error:", error);
       }
+    }
+
+    document.addEventListener("paste", e => {
+      if (!e.target.classList.contains("paste")) return;
+
+      e.preventDefault();
+      let text = (e.originalEvent || e).clipboardData.getData('text/plain');
+      insertTextAtSelection(e.target, text);
+    });
+
+    function insertTextAtSelection(target, txt) {
+      let sel = window.getSelection();
+      let text = target.textContent;
+      let before = Math.min(sel.focusOffset, sel.anchorOffset);
+      let after = Math.max(sel.focusOffset, sel.anchorOffset);
+      let afterStr = text.substring(after);
+      if (afterStr == "") afterStr = "\n";
+      target.textContent = text.substring(0, before) + txt + afterStr;
+      sel.removeAllRanges();
+      let range = document.createRange();
+      range.setStart(target.childNodes[0], before + txt.length);
+      range.setEnd(target.childNodes[0], before + txt.length);
+      sel.addRange(range);
     }
   </script>
 </body>
