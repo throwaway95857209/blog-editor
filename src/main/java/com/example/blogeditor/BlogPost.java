@@ -1,5 +1,7 @@
 package com.example.blogeditor;
 
+import java.util.Map;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -11,14 +13,7 @@ public class BlogPost {
 
     private String author;
 
-    private String source;
-
-    private String html;
-
-    public BlogPost(String source, String html) {
-        this.source = source;
-        this.html = html;
-    }
+    private Map<String, Object> content;
 
     public String getTitle() {
         return title;
@@ -44,20 +39,12 @@ public class BlogPost {
         this.author = author;
     }
 
-    public String getSource() {
-        return source;
+    public Map<String, Object> getContent() {
+        return content;
     }
 
-    public void setSource(String source) {
-        this.source = source;
-    }
-
-    public String getHtml() {
-        return html;
-    }
-
-    public void setHtml(String html) {
-        this.html = html;
+    public void setContent(Map<String, Object> content) {
+        this.content = content;
     }
 
     public String toString() {

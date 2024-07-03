@@ -17,7 +17,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -58,12 +57,6 @@ public class BlogController {
     return title.replaceAll("[^a-zA-Z0-9]", "-").toLowerCase();
   }
 
-  private String template = """
-    <div id="blog-post" data-name="${name}" data-title="${title}" data-subtitle="${subtitle}" data-created="${created}" data-author="${author}">
-      ${content}
-    </div>
-      """;
-
   private Map<String, Object> createOrUpdatePost(BlogPost blogPost, GHRepository repository, String name, String message)
       throws IOException {
     Map<String, Object> post = new LinkedHashMap<>();
@@ -72,23 +65,13 @@ public class BlogController {
     post.put("subtitle", blogPost.getSubtitle());
     post.put("author", blogPost.getAuthor());
     post.put("created", new Date().getTime());
+    post.put("content", blogPost.getContent());
+    
+    String path = "docs/content/" + name + ".json";
+    post.put("path", path.substring(5));
 
-    String content = blogPost.getHtml();
-    String html = template
-        .replace("${name}", (CharSequence) post.get("name"))
-        .replace("${title}", (CharSequence) post.get("title"))
-        .replace("${subtitle}", (CharSequence) post.get("subtitle"))
-        .replace("${author}", (CharSequence) post.get("author"))
-        .replace("${created}", "" + post.get("created"))
-        .replace("${content}", content);
-
-    String htmlPath = "docs/" + name + ".html";
-    String sourcePath = "docs/source/" + name + ".html-source";
-    repository.createContent().path(htmlPath).content(html).message(message).commit();
-    repository.createContent().path(sourcePath).content(blogPost.getSource()).message(message).commit();
-
-    post.put("html", htmlPath.substring(5));
-    post.put("source", sourcePath.substring(5));
+    String value = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(post);
+    repository.createContent().path(path).content(value).message(message).commit();
 
     return post;
   }
