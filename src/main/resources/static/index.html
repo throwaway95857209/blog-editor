@@ -235,6 +235,13 @@
     crossorigin="anonymous"></script>
 
   <script>
+    document.getElementById("new").addEventListener("click", function (ev) {
+      document.getElementById("title").innerText = "Title";
+      document.getElementById("subtitle").innerText = "Subtitle";
+      document.getElementById("author").innerText = "Author";
+      editor.clear();
+    });
+
     const myModal = new bootstrap.Modal(document.getElementById("staticBackdrop"), {});
     document.getElementById("properties").addEventListener("click", function (ev) {
       myModal.show();
