@@ -82,6 +82,38 @@
     #author {
       outline: none;
     }
+
+    #file-list-group {
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid #dedede;
+      border-radius: unset;
+    }
+
+    .list-group-item {
+      border: none;
+      border-bottom: 1px solid #dedede;
+    }
+
+    #file-list-group .list-group-item.active small.text-muted {
+      color: var(--bs-list-group-active-color) !important;
+    }
+
+    .codex-editor__redactor {
+      padding-bottom: 10px !important;
+    }
+
+    .editor {
+      border: 1px solid #ffffff;
+    }
+
+    .editor:hover {
+      border: 1px solid #dedede;
+    }
+
+    .codex-editor--narrow .codex-editor__redactor {
+      margin-right: unset;
+    }
   </style>
 </head>
 
@@ -101,7 +133,7 @@
             </a>
             <ul class="dropdown-menu">
               <li><a id="new" class="dropdown-item" href="#">New</a></li>
-              <li><a id="draft" class="dropdown-item" href="#">Save as Draft</a></li>
+              <li><a id="open" class="dropdown-item" href="#">Open</a></li>
               <li><a id="publish" class="dropdown-item" href="#">Publish</a></li>
               <li>
                 <hr class="dropdown-divider">
@@ -140,7 +172,7 @@
     </div>
   </article>
 
-  <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+  <div class="modal fade" id="properties-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
     aria-labelledby="staticBackdropLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -159,80 +191,166 @@
     </div>
   </div>
 
+  <div class="modal fade" id="open-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="staticBackdropLabel">Open File</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div id="file-list-group" class="list-group">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Cancel</button>
+          <button id="open-file" type="button" class="btn btn-primary" data-bs-dismiss="modal">Open</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <template id="list-group-item-template">
+    <a href="#" id="${this.name}" class="list-group-item list-group-item-action">
+      <div class="d-flex w-100 justify-content-between">
+        <h5 class="mb-1">${this.title}</h5>
+        <small>${this.timeago}</small>
+      </div>
+      <p class="mb-1">${this.subtitle}</p>
+      <small class="text-muted">Posted by ${this.author}</small>
+    </a>
+  </template>
+
   <script>
-    const editor = new EditorJS({
-      autofocus: true,
-      placeholder: 'Type text or paste a link',
-      tools: {
-        header: {
-          class: Header,
-          inlineToolbar: ['link', 'marker'],
-          tunes: ['anyTuneName']
-        },
-        paragraph: {
-          class: Paragraph,
-          inlineToolbar: true,
-          tunes: ['anyTuneName']
-        },
-        image: {
-          class: SimpleImage,
-          inlineToolbar: true,
-          config: {
-            placeholder: 'Paste image URL'
+    const createEditor = function (holder) {
+      const editor = new EditorJS({
+        holder: holder,
+        autofocus: true,
+        placeholder: 'Type text or paste a link',
+        tools: {
+          header: {
+            class: Header,
+            inlineToolbar: ['link', 'marker'],
+            tunes: ['anyTuneName']
           },
-          tunes: ['anyTuneName']
-        },
-        list: {
-          class: NestedList,
-          inlineToolbar: true
-        },
-        code: {
-          class: CodeTool,
-          shortcut: 'CMD+SHIFT+D'
-        },
-        quote: {
-          class: Quote,
-          inlineToolbar: true,
-        },
-        delimiter: Delimiter,
-        embed: Embed,
-        table: {
-          class: Table,
-          inlineToolbar: true
-        },
-        raw: RawTool,
-        inlineCode: {
-          class: InlineCode,
-          shortcut: 'CMD+SHIFT+C'
-        },
-        marker: {
-          class: Marker,
-          shortcut: 'CMD+SHIFT+M'
-        },
-        warning: Warning,
-        checklist: Checklist,
-        anyTuneName: {
-          class: AlignmentBlockTune,
-          config: {
-            default: 'left',
-            blocks: {
+          paragraph: {
+            class: Paragraph,
+            inlineToolbar: true,
+            tunes: ['anyTuneName']
+          },
+          image: {
+            class: SimpleImage,
+            inlineToolbar: true,
+            config: {
+              placeholder: 'Paste image URL'
+            },
+            tunes: ['anyTuneName']
+          },
+          list: {
+            class: NestedList,
+            inlineToolbar: true
+          },
+          code: {
+            class: CodeTool,
+            shortcut: 'CMD+SHIFT+D'
+          },
+          quote: {
+            class: Quote,
+            inlineToolbar: true,
+          },
+          delimiter: Delimiter,
+          embed: Embed,
+          table: {
+            class: Table,
+            inlineToolbar: true
+          },
+          raw: RawTool,
+          inlineCode: {
+            class: InlineCode,
+            shortcut: 'CMD+SHIFT+C'
+          },
+          marker: {
+            class: Marker,
+            shortcut: 'CMD+SHIFT+M'
+          },
+          warning: Warning,
+          checklist: Checklist,
+          anyTuneName: {
+            class: AlignmentBlockTune,
+            config: {
+              default: 'left',
+              blocks: {
+              }
             }
           }
+        },
+        defaultBlock: 'paragraph',
+        onReady: () => {
+          setTimeout(() => {
+            new Undo({ editor });
+            new DragDrop(editor);
+          }, 200);
         }
-      },
-      defaultBlock: 'paragraph',
-      onReady: () => {
-        setTimeout(() => {
-          new Undo({ editor });
-          new DragDrop(editor);
-        }, 200);
-      }
-    });
+      });
+      return editor;
+    }
+
+    const editor = createEditor('editorjs');
   </script>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
     integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
     crossorigin="anonymous"></script>
+
+  <script>
+    function timeAgo(date) {
+      const seconds = Math.floor((new Date() - date) / 1000);
+
+      const interval = Math.floor(seconds / 31536000);
+
+      if (interval > 1) {
+        return interval + " years ago";
+      }
+      if (interval === 1) {
+        return interval + " year ago";
+      }
+
+      const months = Math.floor(seconds / 2628000);
+      if (months > 1) {
+        return months + " months ago";
+      }
+      if (months === 1) {
+        return months + " month ago";
+      }
+
+      const days = Math.floor(seconds / 86400);
+      if (days > 1) {
+        return days + " days ago";
+      }
+      if (days === 1) {
+        return days + " day ago";
+      }
+
+      const hours = Math.floor(seconds / 3600);
+      if (hours > 1) {
+        return hours + " hours ago";
+      }
+      if (hours === 1) {
+        return hours + " hour ago";
+      }
+
+      const minutes = Math.floor(seconds / 60);
+      if (minutes > 1) {
+        return minutes + " minutes ago";
+      }
+      if (minutes === 1) {
+        return minutes + " minute ago";
+      }
+
+      return "just now";
+    }
+  </script>
 
   <script>
     document.getElementById("new").addEventListener("click", function (ev) {
@@ -242,9 +360,70 @@
       editor.clear();
     });
 
-    const myModal = new bootstrap.Modal(document.getElementById("staticBackdrop"), {});
+    document.getElementById("open-file").addEventListener("click", function (ev) {
+      const active = document.getElementById("file-list-group").active;
+      if (active) {
+        console.log(active.post);
+
+        (async () => {
+          const name = active.post.name;
+          const response = await fetch(`blog/files/${name}`);
+          const json = await response.text();
+          const data = JSON.parse(json);
+          console.log(data);
+
+          document.getElementById("title").innerText = data.title;
+          document.getElementById("subtitle").innerText = data.subtitle;
+          document.getElementById("author").innerText = data.author;
+
+          await editor.render(data.content);
+
+          document.getElementById("properties-editor").value = JSON.stringify(data.properties, null, 2);
+        })();
+
+      } else {
+        console.log("no file selected");
+      }
+    });
+
+    document.getElementById("file-list-group").addEventListener("click", function (ev) {
+      const old = document.querySelector("#file-list-group .list-group-item.active");
+      if (old) {
+        old.classList.remove("active");
+      }
+      const active = document.activeElement;
+      active.classList.add("active");
+      document.getElementById("file-list-group").active = active;
+    });
+
+    const openModal = new bootstrap.Modal(document.getElementById("open-modal"), {});
+    document.getElementById("open").addEventListener("click", async function (ev) {
+      const response = await fetch("blog/files");
+      const json = await response.text();
+      const files = JSON.parse(json);
+      const posts = files.posts;
+      const keys = Object.keys(posts);
+      keys.reverse();
+      document.getElementById("file-list-group").innerHTML = '';
+      for (let i = 0; i < keys.length; i++) {
+        let file = posts[keys[i]];
+        file.timeago = timeAgo(new Date(file.created));
+
+        const template = document.getElementById("list-group-item-template").innerHTML;
+        const html = new Function("return `" + template + "`;").call(file);
+
+        let div = document.createElement("div");
+        div.innerHTML = html;
+
+        div.children[0].post = file;
+        document.getElementById("file-list-group").appendChild(div.children[0]);
+      }
+      openModal.show();
+    });
+
+    const propertiesModal = new bootstrap.Modal(document.getElementById("properties-modal"), {});
     document.getElementById("properties").addEventListener("click", function (ev) {
-      myModal.show();
+      propertiesModal.show();
     });
 
     document.getElementById("publish").addEventListener("click", function (ev) {

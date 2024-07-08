@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.logging.Logger;
 
 import org.kohsuke.github.GHContent;
@@ -14,13 +15,18 @@ import org.kohsuke.github.GHFileNotFoundException;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.exc.StreamReadException;
@@ -28,10 +34,44 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DatabindException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import jakarta.websocket.server.PathParam;
+
 @RestController()
 @RequestMapping("/blog")
 public class BlogController {
   private static final Logger log = Logger.getLogger(BlogController.class.getName());
+
+  @GetMapping(value = "files", produces = MediaType.APPLICATION_JSON_VALUE)
+  @ResponseBody
+  public HashMap<String, Object> get() throws IOException {
+    String token = System.getenv("GITHUB_ACCESS_TOKEN");
+    GitHub github = GitHub.connectUsingOAuth(token);
+
+    GHRepository repository = github.getRepository("throwaway95857209/blog");
+
+    GHContent dataContent = repository.getFileContent("docs/data/data.json");
+    HashMap<String, Object> dataMap = new ObjectMapper().readValue(dataContent.read(),
+        new TypeReference<HashMap<String, Object>>() {
+        });
+
+    return dataMap;
+  }
+
+  @GetMapping(value = "files/{name}", produces = MediaType.APPLICATION_JSON_VALUE)
+  @ResponseBody
+  public String getFile(@PathVariable("name") String name) throws IOException {
+    String token = System.getenv("GITHUB_ACCESS_TOKEN");
+    GitHub github = GitHub.connectUsingOAuth(token);
+    GHRepository repository = github.getRepository("throwaway95857209/blog");
+
+    GHContent content = repository.getFileContent("docs/content/${name}.json".replace("${name}", name));
+    if (content != null) {
+      try (Scanner s = new Scanner(content.read()).useDelimiter("\\A")) {
+        return s.hasNext() ? s.next() : "{}";
+      }
+    }
+    throw new ResponseStatusException(HttpStatus.NOT_FOUND, "entity not found");
+  }
 
   @PostMapping("posts")
   public BlogPost post(@RequestBody BlogPost blogPost) throws IOException {
