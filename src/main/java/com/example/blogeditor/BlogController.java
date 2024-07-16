@@ -34,8 +34,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DatabindException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import jakarta.websocket.server.PathParam;
-
 @RestController()
 @RequestMapping("/blog")
 public class BlogController {

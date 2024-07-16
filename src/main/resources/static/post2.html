@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="" />
+    <meta name="author" content="" />
+    <title>Clean Blog - Start Bootstrap Theme</title>
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+    <!-- Font Awesome icons (free version)-->
+    <script src="https://use.fontawesome.com/releases/v6.3.0/js/all.js" crossorigin="anonymous"></script>
+    <!-- Google fonts-->
+    <link href="https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic" rel="stylesheet"
+        type="text/css" />
+    <link
+        href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800"
+        rel="stylesheet" type="text/css" />
+    <!-- Core theme CSS (includes Bootstrap)-->
+    <link href="css/styles.css" rel="stylesheet" />
+
+
+    <style>
+        #editor-menu-holder {
+            background-color: #333333;
+            opacity: 80%;
+            position: fixed;
+            width: 100%;
+            z-index: 10000;
+        }
+
+        #editor-menu {
+            max-width: 960px;
+            margin-left: auto;
+            margin-right: auto;
+            font-size: 16px;
+            font-family: sans-serif;
+            padding-left: 3rem;
+            padding-right: 3rem;
+        }
+
+        #editor-menu a {
+            color: white;
+        }
+
+        #editor-menu-menu {
+            width: 100px;
+            position: absolute;
+            background-color: #333333;
+            display: none;
+        }
+
+        #editor-menu-menu.show {
+            display: unset;
+        }
+
+        #editor-menu-menu .item {
+            padding: 5px;
+            padding-left: 10px;
+            padding-right: 10px;
+        }
+
+        #editor-menu-menu .item-separator hr {
+            margin: 0px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="editor-menu-holder">
+        <div id="editor-menu">
+            <div>
+                <div><a class="file-menu" href="#">File</a></div>
+                <div id="editor-menu-menu">
+                    <div class="file-new item"><a href="#">New</a></div>
+                    <div class="file-open item"><a href="#">Open</a></div>
+                    <div class="file-save item"><a href="#">Save</a></div>
+                    <div class="item-separator">
+                        <hr>
+                    </div>
+                    <div class="file-publish item"><a href="#">Publish</a></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="properties-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+            aria-labelledby="staticBackdropLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="staticBackdropLabel">Properties Editor</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label for="properties-editor" class="form-label">Enter additional properties as JSON:</label>
+                        <textarea id="properties-editor" class="form-control"
+                            placeholder='{ "property1": "value1" }'></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="open-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+            aria-labelledby="staticBackdropLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="staticBackdropLabel">Open File</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="file-list-group" class="list-group">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Cancel</button>
+                        <button id="open-file" type="button" class="btn btn-primary"
+                            data-bs-dismiss="modal">Open</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <template id="list-group-item-template">
+            <a href="#" id="${this.name}" class="list-group-item list-group-item-action">
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1">${this.title}</h5>
+                    <small>${this.timeago}</small>
+                </div>
+                <p class="mb-1">${this.subtitle}</p>
+                <small class="text-muted">Posted by ${this.author}</small>
+            </a>
+        </template>
+
+        <script>
+            const closeFileMenu = function() {
+                document.getElementById("editor-menu-menu").classList.remove("show");
+            };
+
+            document.querySelector('#editor-menu .file-menu').addEventListener('click', function (ev) {
+                const menu = document.getElementById('editor-menu-menu');
+                menu.classList.contains('show') ? menu.classList.remove('show') : menu.classList.add('show');
+            });
+
+            if (document.querySelector("#editor-menu-menu .file-new")) {
+                document.querySelector("#editor-menu-menu .file-new").addEventListener("click", function (ev) {
+                    console.log("new");
+                    closeFileMenu();
+                    document.getElementById("title").innerText = "Title";
+                    document.getElementById("subtitle").innerText = "Subtitle";
+                    document.getElementById("author").innerText = "Author";
+                    const editor = document.getElementById("editor").editor;
+                    editor.clear();
+                });
+            }
+
+            if (document.querySelector("#open-file")) {
+                document.querySelector("#open-file").addEventListener("click", function (ev) {
+                    const active = document.getElementById("file-list-group").active;
+                    if (active) {
+                        console.log(active.post);
+
+                        (async () => {
+                            const name = active.post.name;
+                            const response = await fetch(`blog/files/${name}`);
+                            const json = await response.text();
+                            const data = JSON.parse(json);
+                            console.log(data);
+
+                            document.getElementById("title").innerText = data.title;
+                            document.getElementById("subtitle").innerText = data.subtitle;
+                            document.getElementById("author").innerText = data.author;
+
+                            await editor.render(data.content);
+
+                            document.getElementById("properties-editor").value = JSON.stringify(data.properties, null, 2);
+                        })();
+
+                    } else {
+                        console.log("no file selected");
+                    }
+                });
+            }
+
+            if (document.querySelector("#editor-menu-menu .file-save")) {
+                document.querySelector("#editor-menu-menu .file-save").addEventListener("click", function (ev) {
+                    console.log("save");
+                    closeFileMenu();
+                });
+            }
+
+            if (document.getElementById("file-list-group")) {
+                document.getElementById("file-list-group").addEventListener("click", function (ev) {
+                    const old = document.querySelector("#file-list-group .list-group-item.active");
+                    if (old) {
+                        old.classList.remove("active");
+                    }
+                    const active = document.activeElement;
+                    active.classList.add("active");
+                    document.getElementById("file-list-group").active = active;
+                });
+            }
+
+
+            if (document.querySelector("#editor-menu-menu .file-open")) {
+                const openModal = new bootstrap.Modal(document.getElementById("open-modal"), {});
+                document.getElementById("#editor-menu-menu .file-open").addEventListener("click", async function (ev) {
+                    closeFileMenu();
+                    const response = await fetch("blog/files");
+                    const json = await response.text();
+                    const files = JSON.parse(json);
+                    const posts = files.posts;
+                    const keys = Object.keys(posts);
+                    keys.reverse();
+                    document.getElementById("file-list-group").innerHTML = '';
+                    for (let i = 0; i < keys.length; i++) {
+                        let file = posts[keys[i]];
+                        file.timeago = timeAgo(new Date(file.created));
+
+                        const template = document.getElementById("list-group-item-template").innerHTML;
+                        const html = new Function("return `" + template + "`;").call(file);
+
+                        let div = document.createElement("div");
+                        div.innerHTML = html;
+
+                        div.children[0].post = file;
+                        document.getElementById("file-list-group").appendChild(div.children[0]);
+                    }
+                    openModal.show();
+                });
+            }
+
+            if (document.getElementById("properties-modal")) {
+                const propertiesModal = new bootstrap.Modal(document.getElementById("properties-modal"), {});
+                document.getElementById("properties").addEventListener("click", function (ev) {
+                    closeFileMenu();
+                    propertiesModal.show();
+                });
+            }
+
+            if (document.getElementById("publish")) {
+                document.getElementById("publish").addEventListener("click", function (ev) {
+                    closeFileMenu();
+                    editor.save().then(savedData => {
+                        const title = document.getElementById("title").innerText;
+                        const subtitle = document.getElementById("subtitle").innerText;
+                        const author = document.getElementById("author").innerText;
+                        const content = savedData;
+                        let properties = document.getElementById("properties-editor").value || "{}";
+                        properties = JSON.parse(properties);
+
+                        const data = { title: title, subtitle: subtitle, author: author, content: content, properties: properties };
+                        postJSON(data);
+                    });
+                });
+            }
+
+            async function postJSON(data) {
+                try {
+                    const response = await fetch("blog/posts", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify(data),
+                    });
+
+                    console.log(response);
+
+                    if (response.status === 200) {
+                        const result = await response.json();
+                        console.log("Success:", result);
+                        alert(`"${result.title}" successfully published!`);
+                    } else {
+                        console.error("Error:", response);
+                        alert(`Error publishing "${result.title}."`);
+                    }
+                } catch (error) {
+                    console.error("Error:", error);
+                }
+            }
+        </script>
+    </div>
+    <!-- Navigation-->
+    <nav class="navbar navbar-expand-lg navbar-light" id="mainNav">
+        <div class="container px-4 px-lg-5">
+            <a class="navbar-brand" href="index.html">Start Bootstrap</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive"
+                aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+                Menu
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarResponsive">
+                <ul class="navbar-nav ms-auto py-4 py-lg-0">
+                    <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="index.html">Home</a></li>
+                    <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="about.html">About</a></li>
+                    <li class="nav-item"><a class="nav-link px-lg-3 py-3 py-lg-4" href="contact.html">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <iframe id="preview-iframe"></iframe>
+    <!-- Page Header-->
+    <header class="masthead" style="background-image: url('assets/img/post-bg.jpg')">
+        <div class="container position-relative px-4 px-lg-5">
+            <div class="row gx-4 gx-lg-5 justify-content-center">
+                <div class="col-md-10 col-lg-8 col-xl-7">
+                    <div class="post-heading">
+                        <h1 id="title" class="title">${title}</h1>
+                        <h2 id="subtitle" class="subheading">${subtitle}</h2>
+                        <span class="meta">
+                            Posted by
+                            <a id="author" href="#!">${author}</a>
+                            on ${date}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+    <!-- Post Content-->
+    <article class="mb-4">
+        <div class="container px-4 px-lg-5">
+            <div class="row gx-4 gx-lg-5 justify-content-center">
+                <div id="editor" class="col-md-10 col-lg-8 col-xl-7">
+                </div>
+            </div>
+        </div>
+    </article>
+    <!-- Footer-->
+    <footer class="border-top">
+        <div class="container px-4 px-lg-5">
+            <div class="row gx-4 gx-lg-5 justify-content-center">
+                <div class="col-md-10 col-lg-8 col-xl-7">
+                    <ul class="list-inline text-center">
+                        <li class="list-inline-item">
+                            <a href="#!">
+                                <span class="fa-stack fa-lg">
+                                    <i class="fas fa-circle fa-stack-2x"></i>
+                                    <i class="fab fa-twitter fa-stack-1x fa-inverse"></i>
+                                </span>
+                            </a>
+                        </li>
+                        <li class="list-inline-item">
+                            <a href="#!">
+                                <span class="fa-stack fa-lg">
+                                    <i class="fas fa-circle fa-stack-2x"></i>
+                                    <i class="fab fa-facebook-f fa-stack-1x fa-inverse"></i>
+                                </span>
+                            </a>
+                        </li>
+                        <li class="list-inline-item">
+                            <a href="#!">
+                                <span class="fa-stack fa-lg">
+                                    <i class="fas fa-circle fa-stack-2x"></i>
+                                    <i class="fab fa-github fa-stack-1x fa-inverse"></i>
+                                </span>
+                            </a>
+                        </li>
+                    </ul>
+                    <div class="small text-center text-muted fst-italic">Copyright &copy; Your Website 2023</div>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <!-- Bootstrap core JS-->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Core theme JS-->
+    <script src="js/scripts.js"></script>
+    <script src="js/load-editor.js"></script>
+
+</body>
+
+</html>
