@@ -15,14 +15,14 @@
 
     iframe {
       width: 100%;
-      height: 100vh;
+      height: calc(100vh - 56px);
       border: none;
     }
   </style>
 </head>
 
 <body>
-  <nav class="navbar bg-dark navbar-expand-sm border-bottom border-body" data-bs-theme="dark">
+  <nav class="navbar bg-dark navbar-expand-sm" data-bs-theme="dark">
     <div class="container px-4 px-lg-5">
       <a class="navbar-brand" href="#">My Blog Editor</a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
@@ -54,6 +54,50 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
     integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
     crossorigin="anonymous"></script>
+
+  <script>
+    document.getElementById("new").addEventListener("click", function (ev) {
+      document.getElementById('preview').contentWindow.location.href = 'editor/post.html#new';
+    });
+
+    const iframe = document.getElementById("preview");
+    iframe.addEventListener("load", function (ev) {
+      const win = document.getElementById('preview').contentWindow;
+      const href = win.location.href;
+      const filename = href.split('#')[0].split('?')[0].split('/').pop();
+      if (filename === 'post.html') {
+        const intervalId = setInterval(function () {
+          const doc = document.getElementById('preview').contentDocument;
+          const el = doc.getElementById('editorjs');
+          if (el) {
+            const editor = el.editor;
+            if (editor) {
+              doc.getElementById('title').setAttribute('contenteditable', true);
+              doc.getElementById('subtitle').setAttribute('contenteditable', true);
+              doc.getElementById('author').setAttribute('contenteditable', true);
+
+              editor.readOnly.toggle(false);
+              clearInterval(intervalId);
+
+              win.addEventListener('hashchange', function (ev) {
+                if (new URL(ev.newURL).hash === "#new") {
+                  doc.getElementById('title').innerText = 'Title';
+                  doc.getElementById('subtitle').innerText = 'Subtitle';
+                  doc.getElementById('author').innerText = 'Author';
+                  doc.getElementById("created").innerText = 'Now';
+                  doc.querySelector("header.masthead").style.backgroundImage = 'url(assets/img/default.jpg)';
+                  editor.clear();
+                }
+
+                console.log(ev);
+              })
+            }
+          }
+        }, 100);
+
+      }
+    });
+  </script>
 </body>
 
 </html>
