@@ -37,7 +37,6 @@
             </a>
             <ul class="dropdown-menu">
               <li><a id="new" class="dropdown-item" href="#">New</a></li>
-              <li><a id="open" class="dropdown-item" href="#">Open</a></li>
               <li><a id="publish" class="dropdown-item" href="#">Publish</a></li>
               <li>
                 <hr class="dropdown-divider">
@@ -61,8 +60,12 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
-          <label for="properties-editor" class="form-label">Enter additional properties as JSON:</label>
-          <textarea id="properties-editor" class="form-control" placeholder='{ "property1": "value1" }'></textarea>
+          <label for="properties-editor" class="form-label">Background Image Url</label>
+          <input type="text" id="background-image-url" class="form-control mb-3"
+            placeholder='Background Image Url'></textarea>
+
+          <label for="properties-editor" class="form-label">Enter additional properties as JSON</label>
+          <textarea id="properties-editor" class="form-control mb-3" placeholder='{ "property1": "value1" }'></textarea>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
@@ -85,6 +88,18 @@
       propertiesModal.show();
     });
 
+    document.getElementById("properties-modal").addEventListener('hidden.bs.modal', ev => {
+      const doc = document.getElementById('preview').contentDocument;
+      const current = doc.querySelector("header.masthead").style.backgroundImage;
+      const backgroundImage = document.getElementById("background-image-url").value;
+
+      if (!current.includes(backgroundImage)) {
+        doc.querySelector("header.masthead").style.backgroundImage = `url(${backgroundImage})`;
+      }
+
+      console.log(ev);
+    });
+
     document.getElementById("publish").addEventListener("click", function (ev) {
       const doc = document.getElementById('preview').contentDocument;
       const el = doc.getElementById('editorjs');
@@ -96,8 +111,15 @@
           const subtitle = doc.getElementById("subtitle").innerText;
           const author = doc.getElementById("author").innerText;
           const content = savedData;
+
+          const backgroundImage = document.getElementById("background-image-url").value;
+
           let properties = document.getElementById("properties-editor").value || "{}";
           properties = JSON.parse(properties);
+
+          if (backgroundImage) {
+            properties['background-image'] = backgroundImage;
+          }
 
           const data = { title: title, subtitle: subtitle, author: author, content: content, properties: properties };
           postJSON(data);
