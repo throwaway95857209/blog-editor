@@ -60,6 +60,15 @@
       document.getElementById('preview').contentWindow.location.href = 'editor/post.html#new';
     });
 
+    const newPost = function(doc, editor) {
+      doc.getElementById('title').innerText = 'Title';
+      doc.getElementById('subtitle').innerText = 'Subtitle';
+      doc.getElementById('author').innerText = 'Author';
+      doc.getElementById("created").innerText = 'Now';
+      doc.querySelector("header.masthead").style.backgroundImage = 'url(assets/img/default.jpg)';
+      editor.clear();
+    }
+
     const iframe = document.getElementById("preview");
     iframe.addEventListener("load", function (ev) {
       const win = document.getElementById('preview').contentWindow;
@@ -81,16 +90,13 @@
 
               win.addEventListener('hashchange', function (ev) {
                 if (new URL(ev.newURL).hash === "#new") {
-                  doc.getElementById('title').innerText = 'Title';
-                  doc.getElementById('subtitle').innerText = 'Subtitle';
-                  doc.getElementById('author').innerText = 'Author';
-                  doc.getElementById("created").innerText = 'Now';
-                  doc.querySelector("header.masthead").style.backgroundImage = 'url(assets/img/default.jpg)';
-                  editor.clear();
+                  newPost(doc, editor);
                 }
+              });
 
-                console.log(ev);
-              })
+              if (win.location.hash === "#new") {
+                newPost(doc, editor);
+              }
             }
           }
         }, 100);
