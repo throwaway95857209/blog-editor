@@ -18,6 +18,13 @@
       height: calc(100vh - 56px);
       border: none;
     }
+
+    a.disabled {
+      /* Make the disabled links grayish*/
+      color: gray;
+      /* And disable the pointer events */
+      pointer-events: none;
+    }
   </style>
 </head>
 
@@ -163,6 +170,9 @@
 
     const iframe = document.getElementById("preview");
     iframe.addEventListener("load", function (ev) {
+      document.getElementById("publish").classList.add("disabled");
+      document.getElementById("properties").classList.add("disabled");
+
       const win = document.getElementById('preview').contentWindow;
       const href = win.location.href;
       const filename = href.split('#')[0].split('?')[0].split('/').pop();
@@ -189,6 +199,9 @@
               if (win.location.hash === "#new") {
                 newPost(doc, editor);
               }
+
+              document.getElementById("publish").classList.remove("disabled");
+              document.getElementById("properties").classList.remove("disabled");
             }
           }
         }, 100);
