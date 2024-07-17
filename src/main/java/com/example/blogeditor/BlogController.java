@@ -85,11 +85,12 @@ public class BlogController {
 
     updateData(repository, message, post);
 
+    blogPost.setName(name);
     return blogPost;
   }
 
   private String getMessage(String name) {
-    return "Add blog post ${name}".replace("${name}", name);
+    return "Add/update blog post ${name}".replace("${name}", name);
   }
 
   private String getName(String title) {

@@ -149,6 +149,7 @@
         if (response.status === 200) {
           const result = await response.json();
           console.log("Success:", result);
+          document.getElementById('preview').contentWindow.location.href = `editor/post.html#${result.name}`;
           alert(`"${result.title}" successfully published!`);
         } else {
           console.error("Error:", response);
