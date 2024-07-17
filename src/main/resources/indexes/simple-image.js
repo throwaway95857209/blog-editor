@@ -58,6 +58,10 @@ class SimpleImage {
     ];
   }
 
+  static get isReadOnlySupported() {
+    return true;
+  }
+
   render() {
     this.wrapper = document.createElement('div');
     this.wrapper.classList.add('simple-image');
