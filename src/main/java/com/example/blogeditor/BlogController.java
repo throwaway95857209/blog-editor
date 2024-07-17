@@ -6,20 +6,27 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.logging.Logger;
 
 import org.kohsuke.github.GHContent;
 import org.kohsuke.github.GHContentUpdateResponse;
+import org.kohsuke.github.GHFileNotFoundException;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.exc.StreamReadException;
@@ -31,6 +38,38 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @RequestMapping("/blog")
 public class BlogController {
   private static final Logger log = Logger.getLogger(BlogController.class.getName());
+
+  @GetMapping(value = "files", produces = MediaType.APPLICATION_JSON_VALUE)
+  @ResponseBody
+  public HashMap<String, Object> get() throws IOException {
+    String token = System.getenv("GITHUB_ACCESS_TOKEN");
+    GitHub github = GitHub.connectUsingOAuth(token);
+
+    GHRepository repository = github.getRepository("throwaway95857209/blog");
+
+    GHContent dataContent = repository.getFileContent("docs/data/data.json");
+    HashMap<String, Object> dataMap = new ObjectMapper().readValue(dataContent.read(),
+        new TypeReference<HashMap<String, Object>>() {
+        });
+
+    return dataMap;
+  }
+
+  @GetMapping(value = "files/{name}", produces = MediaType.APPLICATION_JSON_VALUE)
+  @ResponseBody
+  public String getFile(@PathVariable("name") String name) throws IOException {
+    String token = System.getenv("GITHUB_ACCESS_TOKEN");
+    GitHub github = GitHub.connectUsingOAuth(token);
+    GHRepository repository = github.getRepository("throwaway95857209/blog");
+
+    GHContent content = repository.getFileContent("docs/content/${name}.json".replace("${name}", name));
+    if (content != null) {
+      try (Scanner s = new Scanner(content.read()).useDelimiter("\\A")) {
+        return s.hasNext() ? s.next() : "{}";
+      }
+    }
+    throw new ResponseStatusException(HttpStatus.NOT_FOUND, "entity not found");
+  }
 
   @PostMapping("posts")
   public BlogPost post(@RequestBody BlogPost blogPost) throws IOException {
@@ -57,13 +96,8 @@ public class BlogController {
     return title.replaceAll("[^a-zA-Z0-9]", "-").toLowerCase();
   }
 
-  private String template = """
-    <div id="blog-post" data-name="${name}" data-title="${title}" data-subtitle="${subtitle}" data-created="${created}" data-author="${author}">
-      ${content}
-    </div>
-      """;
-
-  private Map<String, Object> createOrUpdatePost(BlogPost blogPost, GHRepository repository, String name, String message)
+  private Map<String, Object> createOrUpdatePost(BlogPost blogPost, GHRepository repository, String name,
+      String message)
       throws IOException {
     Map<String, Object> post = new LinkedHashMap<>();
     post.put("name", name);
@@ -71,24 +105,19 @@ public class BlogController {
     post.put("subtitle", blogPost.getSubtitle());
     post.put("author", blogPost.getAuthor());
     post.put("created", new Date().getTime());
+    post.put("content", blogPost.getContent());
+    post.put("properties", blogPost.getProperties());
 
-    String content = blogPost.getHtml();
-    String html = template
-        .replace("${name}", (CharSequence) post.get("name"))
-        .replace("${title}", (CharSequence) post.get("title"))
-        .replace("${subtitle}", (CharSequence) post.get("subtitle"))
-        .replace("${author}", (CharSequence) post.get("author"))
-        .replace("${created}", "" + post.get("created"))
-        .replace("${content}", content);
+    String path = "docs/content/" + name + ".json";
+    post.put("path", path.substring(5));
+    String value = new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(post);
 
-    String htmlPath = "docs/" + name + ".html";
-    String sourcePath = "docs/source/" + name + ".html-source";
-    repository.createContent().path(htmlPath).content(html).message(message).commit();
-    repository.createContent().path(sourcePath).content(blogPost.getSource()).message(message).commit();
-
-    post.put("html", htmlPath.substring(5));
-    post.put("source", sourcePath.substring(5));
-
+    try {
+      GHContent fileContent = repository.getFileContent(path);
+      fileContent.update(value, message, "main");
+    } catch (GHFileNotFoundException e) {
+      repository.createContent().path(path).content(value).message(message).commit();
+    }
     return post;
   }
 
@@ -108,7 +137,11 @@ public class BlogController {
     Map<String, Object> dataMap = new LinkedHashMap<>();
     Map<String, Object> postMap = new LinkedHashMap<>();
     dataMap.put("posts", postMap);
-    postMap.put((String) post.get("name"), post);
+
+    Map<String, Object> summary = new LinkedHashMap<>();
+    summary.putAll(post);
+    summary.remove("content");
+    postMap.put((String) post.get("name"), summary);
 
     repository.createContent().path("docs/data/data.json")
         .content(new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(dataMap))
@@ -123,13 +156,19 @@ public class BlogController {
         });
     @SuppressWarnings("unchecked")
     Map<String, Object> postMap = (Map<String, Object>) dataMap.get("posts");
-    postMap.put((String) post.get("name"), post);
+
+    Map<String, Object> summary = new LinkedHashMap<>();
+    summary.putAll(post);
+    summary.remove("content");
+    postMap.put((String) post.get("name"), summary);
+
     dataContent.update(new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(dataMap), message,
         "main");
   }
 
   @PostMapping("uploadImage")
-  public ResponseEntity<String> handleImageUpload(@RequestPart("image") MultipartFile imageFile, @RequestPart("path") String path) {
+  public ResponseEntity<String> handleImageUpload(@RequestPart("image") MultipartFile imageFile,
+      @RequestPart("path") String path) {
     if (!imageFile.isEmpty()) {
       try {
         uploadImageToRepository(imageFile, path);
@@ -154,6 +193,7 @@ public class BlogController {
     // Upload image file
     String filename = path + "/" + imageFile.getOriginalFilename();
     byte[] bytes = imageFile.getBytes();
-    GHContentUpdateResponse commit = repository.createContent().path(filename).content(bytes).message("Upload ${filename}.".replace("${filename}", filename)).commit();
+    GHContentUpdateResponse commit = repository.createContent().path(filename).content(bytes)
+        .message("Upload ${filename}.".replace("${filename}", filename)).commit();
   }
 }

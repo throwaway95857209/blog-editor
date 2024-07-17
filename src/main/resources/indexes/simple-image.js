@@ -58,6 +58,10 @@ class SimpleImage {
     ];
   }
 
+  static get isReadOnlySupported() {
+    return true;
+  }
+
   render() {
     this.wrapper = document.createElement('div');
     this.wrapper.classList.add('simple-image');
@@ -109,8 +113,8 @@ class SimpleImage {
     const caption = blockContent.querySelector('[contenteditable]');
 
     return Object.assign(this.data, {
-      url: image.src,
-      caption: caption.innerHTML || ''
+      url: image && image.src || '',
+      caption: caption && caption.innerHTML || ''
     });
   }
 
