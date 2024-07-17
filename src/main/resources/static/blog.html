@@ -51,6 +51,26 @@
   </nav>
 
   <iframe id="preview" src="editor/" allow="fullscreen *; keyboard-map *"></iframe>
+
+  <div class="modal fade" id="properties-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+    aria-labelledby="staticBackdropLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="staticBackdropLabel">Properties Editor</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <label for="properties-editor" class="form-label">Enter additional properties as JSON:</label>
+          <textarea id="properties-editor" class="form-control" placeholder='{ "property1": "value1" }'></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
     integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
     crossorigin="anonymous"></script>
@@ -60,7 +80,57 @@
       document.getElementById('preview').contentWindow.location.href = 'editor/post.html#new';
     });
 
-    const newPost = function(doc, editor) {
+    const propertiesModal = new bootstrap.Modal(document.getElementById("properties-modal"), {});
+    document.getElementById("properties").addEventListener("click", function (ev) {
+      propertiesModal.show();
+    });
+
+    document.getElementById("publish").addEventListener("click", function (ev) {
+      const doc = document.getElementById('preview').contentDocument;
+      const el = doc.getElementById('editorjs');
+      if (el) {
+        const editor = el.editor;
+
+        editor.save().then(savedData => {
+          const title = doc.getElementById("title").innerText;
+          const subtitle = doc.getElementById("subtitle").innerText;
+          const author = doc.getElementById("author").innerText;
+          const content = savedData;
+          let properties = document.getElementById("properties-editor").value || "{}";
+          properties = JSON.parse(properties);
+
+          const data = { title: title, subtitle: subtitle, author: author, content: content, properties: properties };
+          postJSON(data);
+        });
+      }
+    });
+
+    async function postJSON(data) {
+      try {
+        const response = await fetch("blog/posts", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        });
+
+        console.log(response);
+
+        if (response.status === 200) {
+          const result = await response.json();
+          console.log("Success:", result);
+          alert(`"${result.title}" successfully published!`);
+        } else {
+          console.error("Error:", response);
+          alert(`Error publishing "${result.title}."`);
+        }
+      } catch (error) {
+        console.error("Error:", error);
+      }
+    }
+
+    const newPost = function (doc, editor) {
       doc.getElementById('title').innerText = 'Title';
       doc.getElementById('subtitle').innerText = 'Subtitle';
       doc.getElementById('author').innerText = 'Author';
