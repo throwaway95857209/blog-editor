@@ -109,7 +109,7 @@
 
     document.getElementById("publish").addEventListener("click", function (ev) {
       const doc = document.getElementById('preview').contentDocument;
-      const el = doc.getElementById('editorjs');
+      const el = doc.getElementById('editor');
       if (el) {
         const editor = el.editor;
 
@@ -206,7 +206,6 @@
             }
           }
         }, 100);
-
       }
     });
   </script>
